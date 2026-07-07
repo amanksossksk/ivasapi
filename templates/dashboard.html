@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OTP Dashboard · Multi-Pool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --dark-bg: #1f2937;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+        }
+        
+        [data-theme="dark"] {
+            --card-bg: #374151;
+            --border-color: #4b5563;
+            color-scheme: dark;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            color: white;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-connected {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .status-disconnected {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .status-connecting {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--primary-color), #764ba2);
+            color: white;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-bg);
+            margin-bottom: 4px;
+        }
+        
+        [data-theme="dark"] .stat-value {
+            color: #f3f4f6;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .main-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin: 0;
+        }
+        
+        [data-theme="dark"] .card-title {
+            color: #f3f4f6;
+        }
+        
+        .pool-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .pool-btn {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 2px solid var(--border-color);
+            background: transparent;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            color: var(--dark-bg);
+            position: relative;
+        }
+        
+        .pool-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        [data-theme="dark"] .pool-btn {
+            color: #f3f4f6;
+        }
+        
+        .pool-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .pool-btn:hover:not(.active):not(:disabled) {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        
+        .pool-btn .badge {
+            font-size: 10px;
+            margin-left: 4px;
+        }
+        
+        .pool-manager {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .pool-manager {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--card-bg);
+            color: var(--dark-bg);
+        }
+        
+        .search-box i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .otp-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .otp-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        
+        .otp-item:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+        
+        .otp-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-color), #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .otp-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .otp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .otp-service {
+            font-weight: 600;
+            color: var(--dark-bg);
+            font-size: 16px;
+        }
+        
+        [data-theme="dark"] .otp-service {
+            color: #f3f4f6;
+        }
+        
+        .otp-time {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .otp-number {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .otp-code {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-bg);
+        }
+        
+        [data-theme="dark"] .form-label {
+            color: #f3f4f6;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            background: var(--card-bg);
+            color: var(--dark-bg);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.2s;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+        
+        .nav-item i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .copy-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark-bg);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2000;
+        }
+        
+        .copy-notification.show {
+            opacity: 1;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .file-upload-area i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+        }
+        
+        .number-preview {
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .pool-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .pool-stat-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(79, 70, 229, 0.05);
+            border-radius: 12px;
+        }
+        
+        .pool-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .pool-stat-label {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .spinner-small {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+                padding-bottom: 80px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .stat-value {
+                font-size: 24px;
+            }
+            
+            .pool-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="bi bi-shield-lock"></i> OTP Dashboard</h1>
+            <div>
+                <span class="status-badge" id="connectionStatus">Connecting...</span>
+                <button class="btn btn-sm btn-light ms-2" onclick="toggleTheme()">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-inbox"></i></div>
+                <div class="stat-value" id="totalOtps">0</div>
+                <div class="stat-label">Total OTPs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-value" id="todayOtps">0</div>
+                <div class="stat-label">Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-phone"></i></div>
+                <div class="stat-value" id="activeNumbers">0</div>
+                <div class="stat-label">Active Numbers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-database"></i></div>
+                <div class="stat-value" id="poolNumbers">0</div>
+                <div class="stat-label">Pool Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+                <div class="stat-value" id="lastHourCount">0</div>
+                <div class="stat-label">Last 1h OTPs</div>
+            </div>
+        </div>
+        
+        <!-- Pool Selector -->
+        <div class="main-card">
+            <div class="card-header">
+                <span class="card-title"><i class="bi bi-layers"></i> Number Pools</span>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createPoolModal">
+                    <i class="bi bi-plus-circle"></i> New Pool
+                </button>
+            </div>
+            <div class="pool-selector" id="poolSelector">
+                <div class="text-muted">Loading pools...</div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div id="mainContent">
+            <!-- OTP List View -->
+            <div id="otpListView">
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="bi bi-list-ul"></i> Recent OTPs</h2>
+                        <button class="btn btn-sm" onclick="refreshOtps()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search by number or service..." onkeyup="filterOtps()">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    
+                    <div class="otp-list" id="otpList">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pool Management View -->
+            <div id="poolView" style="display: none;">
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="bi bi-database"></i> Pool Management</h2>
+                        <span class="badge bg-primary" id="currentPoolBadge">Default</span>
+                    </div>
+                    
+                    <div class="pool-manager">
+                        <div>
+                            <h6>Upload Numbers</h6>
+                            <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                                <input type="file" id="fileInput" accept=".txt" style="display: none;" onchange="uploadFile(this)">
+                                <i class="bi bi-cloud-upload"></i>
+                                <p>Click to select .txt file</p>
+                                <small class="text-muted">One number per line</small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Add Single Number</h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="singleNumber" placeholder="Enter phone number">
+                                    <button class="btn btn-primary" onclick="addSingleNumber()">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h6>Pool Statistics</h6>
+                            <div class="pool-stats">
+                                <div class="pool-stat-item">
+                                    <div class="pool-stat-value" id="poolAvailable">0</div>
+                                    <div class="pool-stat-label">Available</div>
+                                </div>
+                                <div class="pool-stat-item">
+                                    <div class="pool-stat-value" id="poolTotal">0</div>
+                                    <div class="pool-stat-label">Total Loaded</div>
+                                </div>
+                                <div class="pool-stat-item">
+                                    <div class="pool-stat-value" id="poolServed">0</div>
+                                    <div class="pool-stat-label">Served</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Number Preview</h6>
+                                <div class="number-preview" id="numberPreview">
+                                    <span class="text-muted">No numbers in pool</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 d-flex gap-2 flex-wrap">
+                                <button class="btn btn-success" onclick="testGetNumber()">
+                                    <i class="bi bi-arrow-right-circle"></i> Get Number
+                                </button>
+                                <button class="btn btn-warning" onclick="refreshPoolStatus()">
+                                    <i class="bi bi-arrow-repeat"></i> Refresh
+                                </button>
+                                <button class="btn btn-danger" onclick="clearNumberPool()">
+                                    <i class="bi bi-trash"></i> Clear Pool
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Config View -->
+            <div id="configView" style="display: none;">
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="bi bi-gear"></i> WebSocket Configuration</h2>
+                    </div>
+                    
+                    <form id="configForm">
+                        <div class="form-group">
+                            <label class="form-label">WebSocket URL</label>
+                            <textarea class="form-control" id="wsUrl" rows="4" required></textarea>
+                            <small class="text-muted">Enter the WebSocket server URL with authentication</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ping Interval (ms)</label>
+                            <input type="number" class="form-control" id="pingInterval" value="25000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Auto Reconnect</label>
+                            <select class="form-control" id="autoReconnect">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Reconnect Delay (seconds)</label>
+                            <input type="number" class="form-control" id="reconnectDelay" value="5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Max OTPs per Number</label>
+                            <input type="number" class="form-control" id="maxOtpsPerNumber" value="100">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save"></i> Save Configuration
+                        </button>
+                    </form>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-success w-100" onclick="restartConnection()">
+                            <i class="bi bi-arrow-repeat"></i> Restart Connection
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-danger w-100" onclick="clearAllOtps()">
+                            <i class="bi bi-trash"></i> Clear All OTPs
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API View -->
+            <div id="apiView" style="display: none;">
+                <div class="main-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="bi bi-code-slash"></i> API Endpoints</h2>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>GET /api/getnumber</h6>
+                        <p class="text-muted">Get next available number from current pool</p>
+                        <code class="d-block p-2 bg-light rounded">curl http://localhost:5000/api/getnumber</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>GET /api/pools</h6>
+                        <p class="text-muted">Get all pools information</p>
+                        <code class="d-block p-2 bg-light rounded">curl http://localhost:5000/api/pools</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>POST /api/pools/switch</h6>
+                        <p class="text-muted">Switch to a different pool</p>
+                        <code class="d-block p-2 bg-light rounded">curl -X POST http://localhost:5000/api/pools/switch -H "Content-Type: application/json" -d '{"pool":"guatemala"}'</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>POST /api/pools/create</h6>
+                        <p class="text-muted">Create a new pool</p>
+                        <code class="d-block p-2 bg-light rounded">curl -X POST http://localhost:5000/api/pools/create -H "Content-Type: application/json" -d '{"name":"my_pool","description":"My custom pool","country":"USA"}'</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>GET /api/otp/{number}</h6>
+                        <code class="d-block p-2 bg-light rounded">curl http://localhost:5000/api/otp/1234567890</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>POST /api/otp</h6>
+                        <code class="d-block p-2 bg-light rounded">curl -X POST http://localhost:5000/api/otp -H "Content-Type: application/json" -d '{"number":"1234567890"}'</code>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>GET /api/stats</h6>
+                        <code class="d-block p-2 bg-light rounded">curl http://localhost:5000/api/stats</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="showView('otp')">
+                <i class="bi bi-inbox"></i>
+                <span>OTPs</span>
+            </button>
+            <button class="nav-item" onclick="showView('pool')">
+                <i class="bi bi-database"></i>
+                <span>Pool</span>
+            </button>
+            <button class="nav-item" onclick="showView('config')">
+                <i class="bi bi-gear"></i>
+                <span>Config</span>
+            </button>
+            <button class="nav-item" onclick="showView('api')">
+                <i class="bi bi-code-slash"></i>
+                <span>API</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Create Pool Modal -->
+    <div class="modal fade" id="createPoolModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Pool</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Pool Name</label>
+                        <input type="text" class="form-control" id="newPoolName" placeholder="e.g., usa_pool">
+                        <small class="text-muted">Only letters, numbers, and underscores</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" id="newPoolDescription" placeholder="Pool description">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <input type="text" class="form-control" id="newPoolCountry" placeholder="e.g., USA">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createNewPool()">Create Pool</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Copy Notification -->
+    <div class="copy-notification" id="copyNotification">
+        <i class="bi bi-check-circle"></i> OTP copied to clipboard!
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentView = 'otp';
+        let allOtps = [];
+        let stats = {};
+        let autoRefreshInterval;
+        let currentPool = 'default';
+        let allPools = {};
+        let poolConfig = {};
+        let isSwitchingPool = false;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadOtps();
+            loadConfig();
+            loadPools();
+            
+            // Auto refresh every 5 seconds
+            autoRefreshInterval = setInterval(() => {
+                if (!isSwitchingPool) {
+                    loadStats();
+                    if (currentView === 'otp') {
+                        loadOtps();
+                    } else if (currentView === 'pool') {
+                        refreshPoolStatus();
+                    }
+                }
+            }, 5000);
+        });
+        
+        // Theme toggle
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        
+        // Show different views
+        function showView(view) {
+            currentView = view;
+            
+            document.getElementById('otpListView').style.display = view === 'otp' ? 'block' : 'none';
+            document.getElementById('poolView').style.display = view === 'pool' ? 'block' : 'none';
+            document.getElementById('configView').style.display = view === 'config' ? 'block' : 'none';
+            document.getElementById('apiView').style.display = view === 'api' ? 'block' : 'none';
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const navItems = document.querySelectorAll('.nav-item');
+            const viewMap = {'otp': 0, 'pool': 1, 'config': 2, 'api': 3};
+            if (view in viewMap && navItems[viewMap[view]]) {
+                navItems[viewMap[view]].classList.add('active');
+            }
+            
+            if (view === 'config') {
+                loadConfig();
+            } else if (view === 'pool') {
+                refreshPoolStatus();
+            }
+        }
+        
+        // ==================== POOL MANAGEMENT ====================
+        
+        async function loadPools() {
+            try {
+                const response = await fetch('/api/pools');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    allPools = data.pools || {};
+                    currentPool = data.current_pool || 'default';
+                    poolConfig = data.pool_config || {};
+                    
+                    renderPoolButtons();
+                    updateCurrentPoolBadge();
+                }
+            } catch (error) {
+                console.error('Error loading pools:', error);
+                document.getElementById('poolSelector').innerHTML = `
+                    <span class="text-danger">Error loading pools</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadPools()">Retry</button>
+                `;
+            }
+        }
+        
+        function renderPoolButtons() {
+            const container = document.getElementById('poolSelector');
+            
+            if (!allPools || Object.keys(allPools).length === 0) {
+                container.innerHTML = `<span class="text-muted">No pools available</span>`;
+                return;
+            }
+            
+            let html = '';
+            for (const [poolName, poolData] of Object.entries(allPools)) {
+                const isActive = poolName === currentPool;
+                const label = poolConfig[poolName]?.name || poolName;
+                const count = poolData.available || 0;
+                
+                html += `
+                    <button class="pool-btn ${isActive ? 'active' : ''}" 
+                            onclick="switchPool('${poolName}')"
+                            ${isSwitchingPool ? 'disabled' : ''}>
+                        ${label}
+                        <span class="badge bg-secondary">${count}</span>
+                        ${isActive ? ' ✓' : ''}
+                    </button>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function updateCurrentPoolBadge() {
+            const badge = document.getElementById('currentPoolBadge');
+            const label = poolConfig[currentPool]?.name || currentPool;
+            badge.textContent = label;
+        }
+        
+        async function switchPool(poolName) {
+            if (poolName === currentPool || isSwitchingPool) return;
+            
+            isSwitchingPool = true;
+            
+            // Show loading state on all pool buttons
+            document.querySelectorAll('.pool-btn').forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent.includes(poolName)) {
+                    btn.innerHTML = '<span class="spinner-small"></span> Switching...';
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/pools/switch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pool: poolName})
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    currentPool = poolName;
+                    renderPoolButtons();
+                    updateCurrentPoolBadge();
+                    
+                    // Refresh pool data
+                    await refreshPoolStatus();
+                    await loadStats();
+                    
+                    // Show success message
+                    showToast(`Switched to "${poolConfig[poolName]?.name || poolName}"`);
+                } else {
+                    alert('Error switching pool: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error switching pool:', error);
+                alert('Error switching pool');
+            } finally {
+                isSwitchingPool = false;
+                // Re-enable all pool buttons
+                document.querySelectorAll('.pool-btn').forEach(btn => {
+                    btn.disabled = false;
+                });
+                renderPoolButtons();
+            }
+        }
+        
+        async function createNewPool() {
+            const nameInput = document.getElementById('newPoolName');
+            const descriptionInput = document.getElementById('newPoolDescription');
+            const countryInput = document.getElementById('newPoolCountry');
+            
+            const name = nameInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const country = countryInput.value.trim();
+            
+            if (!name) {
+                alert('Pool name is required');
+                return;
+            }
+            
+            // Validate pool name (only letters, numbers, underscores)
+            if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+                alert('Pool name can only contain letters, numbers, and underscores');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/pools/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: name,
+                        description: description || '',
+                        country: country || 'All'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`Pool "${name}" created successfully!`);
+                    
+                    // Clear form
+                    nameInput.value = '';
+                    descriptionInput.value = '';
+                    countryInput.value = '';
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createPoolModal'));
+                    modal.hide();
+                    
+                    // Reload pools
+                    await loadPools();
+                } else {
+                    alert('Error creating pool: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error creating pool:', error);
+                alert('Error creating pool');
+            }
+        }
+        
+        // Toast notification
+        function showToast(message) {
+            const notification = document.getElementById('copyNotification');
+            notification.innerHTML = `<i class="bi bi-check-circle"></i> ${message}`;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // ==================== STATS ====================
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                stats = data;
+                
+                document.getElementById('totalOtps').textContent = data.total_otps || 0;
+                document.getElementById('todayOtps').textContent = data.today_otps || 0;
+                document.getElementById('activeNumbers').textContent = data.active_numbers || 0;
+                
+                if (data.numbers_pool) {
+                    document.getElementById('poolNumbers').textContent = data.numbers_pool.available || 0;
+                }
+                
+                // Calculate last hour OTPs
+                const oneHourAgo = Date.now() - 3600000;
+                let count = 0;
+                if (allOtps.length) {
+                    allOtps.forEach(o => {
+                        if (new Date(o.timestamp).getTime() > oneHourAgo) count++;
+                    });
+                }
+                document.getElementById('lastHourCount').textContent = count;
+                
+                // Update connection status
+                const statusBadge = document.getElementById('connectionStatus');
+                statusBadge.textContent = data.connection_status || 'Unknown';
+                statusBadge.className = 'status-badge';
+                
+                if (data.connection_status === 'connected') {
+                    statusBadge.classList.add('status-connected');
+                } else if (data.connection_status === 'connecting') {
+                    statusBadge.classList.add('status-connecting');
+                } else {
+                    statusBadge.classList.add('status-disconnected');
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // ==================== OTP ====================
+        
+        async function loadOtps() {
+            try {
+                const response = await fetch('/api/otps/recent?limit=100');
+                const data = await response.json();
+                allOtps = data.otps || [];
+                filterOtps();
+            } catch (error) {
+                console.error('Error loading OTPs:', error);
+            }
+        }
+        
+        function filterOtps() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allOtps;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(otp => 
+                    otp.number.includes(searchTerm) || 
+                    (otp.service && otp.service.toLowerCase().includes(searchTerm)) ||
+                    otp.otp.includes(searchTerm)
+                );
+            }
+            
+            displayOtps(filtered);
+        }
+        
+        function displayOtps(otps) {
+            const otpList = document.getElementById('otpList');
+            
+            if (otps.length === 0) {
+                otpList.innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="bi bi-inbox" style="font-size: 48px; color: #9ca3af;"></i>
+                        <p class="mt-2 text-muted">No OTPs received yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            otpList.innerHTML = otps.map(otp => `
+                <div class="otp-item" onclick="copyOtp('${otp.otp}')">
+                    <div class="otp-icon">
+                        <i class="bi bi-shield"></i>
+                    </div>
+                    <div class="otp-content">
+                        <div class="otp-header">
+                            <span class="otp-service">${otp.service || 'Unknown'}</span>
+                            <span class="otp-time">${formatTime(otp.timestamp)}</span>
+                        </div>
+                        <div class="otp-number">+${otp.number} ${otp.country ? '· ' + otp.country : ''}</div>
+                        <div class="otp-code">${otp.otp}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function refreshOtps() {
+            loadOtps();
+        }
+        
+        function copyOtp(otp) {
+            navigator.clipboard.writeText(otp).then(() => {
+                const notification = document.getElementById('copyNotification');
+                notification.innerHTML = '<i class="bi bi-check-circle"></i> OTP copied to clipboard!';
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 2000);
+            });
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // ==================== POOL OPERATIONS ====================
+        
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/numbers/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ Added ${data.added} numbers! Duplicates: ${data.duplicates}`);
+                    refreshPoolStatus();
+                    loadStats();
+                    loadPools(); // Refresh pool list
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file');
+            }
+            
+            input.value = '';
+        }
+        
+        async function addSingleNumber() {
+            const input = document.getElementById('singleNumber');
+            const number = input.value.trim();
+            
+            if (!number) {
+                alert('Please enter a number');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/numbers/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({number: number})
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ Number ${data.number} added to pool`);
+                    input.value = '';
+                    refreshPoolStatus();
+                    loadPools();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error adding number:', error);
+                alert('Error adding number');
+            }
+        }
+        
+        async function refreshPoolStatus() {
+            try {
+                const response = await fetch('/api/numbers/pool');
+                const data = await response.json();
+                
+                document.getElementById('poolAvailable').textContent = data.available_numbers || 0;
+                document.getElementById('poolTotal').textContent = data.total_loaded || 0;
+                document.getElementById('poolServed').textContent = data.served_count || 0;
+                
+                const previewDiv = document.getElementById('numberPreview');
+                if (data.preview && data.preview.length > 0) {
+                    previewDiv.innerHTML = data.preview.map(num => `+${num}`).join('<br>');
+                } else {
+                    previewDiv.innerHTML = '<span class="text-muted">No numbers in pool</span>';
+                }
+                
+                if (data.current_pool) {
+                    document.getElementById('currentPoolBadge').textContent = data.current_pool;
+                }
+            } catch (error) {
+                console.error('Error refreshing pool status:', error);
+            }
+        }
+        
+        async function testGetNumber() {
+            try {
+                const response = await fetch('/api/getnumber');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ Got number: +${data.number} (${data.remaining_in_pool} remaining)`);
+                    refreshPoolStatus();
+                    loadStats();
+                    loadPools();
+                } else if (data.status === 'empty') {
+                    alert('No numbers available in the pool!');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error getting number:', error);
+                alert('Error getting number');
+            }
+        }
+        
+        async function clearNumberPool() {
+            if (!confirm(`Clear all numbers from current pool? This cannot be undone!`)) return;
+            
+            try {
+                const response = await fetch('/api/numbers/clear', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`Pool cleared successfully!`);
+                    refreshPoolStatus();
+                    loadStats();
+                    loadPools();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error clearing pool:', error);
+                alert('Error clearing number pool');
+            }
+        }
+        
+        // ==================== CONFIG ====================
+        
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                document.getElementById('wsUrl').value = config.websocket_url || '';
+                document.getElementById('pingInterval').value = config.ping_interval || 25000;
+                document.getElementById('autoReconnect').value = config.auto_reconnect ? 'true' : 'false';
+                document.getElementById('reconnectDelay').value = config.reconnect_delay || 5;
+                document.getElementById('maxOtpsPerNumber').value = config.max_otps_per_number || 100;
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+        
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const config = {
+                websocket_url: document.getElementById('wsUrl').value,
+                ping_interval: parseInt(document.getElementById('pingInterval').value),
+                auto_reconnect: document.getElementById('autoReconnect').value === 'true',
+                reconnect_delay: parseInt(document.getElementById('reconnectDelay').value),
+                max_otps_per_number: parseInt(document.getElementById('maxOtpsPerNumber').value)
+            };
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('Configuration saved successfully!');
+                } else {
+                    alert('Error saving configuration: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error saving config:', error);
+                alert('Error saving configuration');
+            }
+        });
+        
+        async function restartConnection() {
+            if (!confirm('Restart WebSocket connection?')) return;
+            
+            try {
+                const response = await fetch('/api/connection/restart', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('Connection restarted successfully!');
+                    setTimeout(() => loadStats(), 2000);
+                } else {
+                    alert('Error restarting connection: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error restarting connection:', error);
+                alert('Error restarting connection');
+            }
+        }
+        
+        async function clearAllOtps() {
+            if (!confirm('Are you sure you want to clear all OTPs? This cannot be undone!')) return;
+            
+            try {
+                const response = await fetch('/api/otps/clear', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('All OTPs cleared successfully!');
+                    loadOtps();
+                    loadStats();
+                } else {
+                    alert('Error clearing OTPs: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error clearing OTPs:', error);
+                alert('Error clearing OTPs');
+            }
+        }
+    </script>
+</body>
+</html>
